@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gift but ts might not work- take 5</title>
+<style>
+body{margin:0;background:#faf7f0;color:#222;font-family:Georgia,serif}
+  .page{display:none;min-height:100vh;padding:30px 16px;box-sizing:border-box;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .page.active{display:flex}
+h1{font-size:44px;font-weight:normal;margin:0 0 10px}
+h2{font-size:40px;font-weight:normal;margin:0 0 10px}
+  .hint{color:#555;margin:0 0 30px}
+  .piano-wrap{width:100%;max-width:560px}
+  .piano{position:relative;display:flex;height:220px;user-select:none;-webkit-user-select:none;touch-action:none}
+  .key.white{flex:1;background:#fff;border:1px solid #222;cursor:pointer;box-sizing:border-box;display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:14px;color:#999}
+  .key.black{position:absolute;top:0;width:8.2%;height:60%;background:#222;z-index:2;cursor:pointer}
+  .key.white.down{background:#ddd}
+  .key.black.down{background:#555}
+  .progress{display:flex;gap:10px;margin-top:26px}
+  .progress span{width:12px;height:12px;border:1px solid #222;border-radius:50%}
+  .progress span.on{background:#222}
+  .status{margin-top:14px;height:20px;font-size:14px;color:#777;font-style:italic}
+#note{justify-content:flex-start}
+#confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none}
+  .card{position:relative;max-width:560px;width:100%;padding:30px 10px}
+  .rule{width:50px;border-top:1px solid #222;margin:24px auto}
+  .message{text-align:left}
+  .message p{font-size:19px;line-height:1.6;margin:0 0 18px;opacity:0;animation:show .8s forwards}
+  .sign{font-size:22px;font-style:italic;margin-top:24px;opacity:0;animation:show .8s forwards}
+#her-name{font-size:52px;font-style:italic}
+
+#favs{margin-top:30px;opacity:0;animation:show .8s forwards}
+.fav{margin:6px;padding:8px 16px;border:1px solid #222;background:none;font-family:inherit;font-size:14px;cursor:pointer}
+.fav:hover{background:#eee}
+@keyframes show{to{opacity:1}}
+</style>
+</head>
+<body>
+
+<main id="lock" class="page active">
+<h1>play smth</h1>
+<p class="hint">what comes to mind rn?</p>
+<div class="piano-wrap"><div id="piano" class="piano"></div></div>
+<h3>progress:</h3>
+<div class="progress" id="progress"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+<p class="status" id="status">&nbsp;</p>
+</main>
+
+
+<main id="note" class="page">
+<canvas id="confetti"></canvas>
+<article class="card">
+<p class="eyebrow" id="date-line"></p>
+<h2>happy birthday,<br><span id="her-name">!!</span></h2>
+<div class="rule"></div>
+<div id="message" class="message"></div>
+<p class="sign" id="sign"></p>
+<div id="favs"></div>
+</article>
+</main>
+
+
+
+
+
+
+<script>
+var santoshi = "santoshi!!!!"
+var me = "- me"
+var bday = "october 27, 2026"
+var noteText = [
+"YAYYY you figured it out, i'm glad it worked bc ts code is so rickety. take a moment to listen to whats playing on your speakers rn, so hopefully your volume is up (but not too high pls)",
+  "OMG YOU'RE FINALLY 15!!!! congrats to that",
+  "ok so i spent way too long making this and the piano thing was supposed to be a secret code. anyways you get the gist",
+  "But all jokes aside, Santoshi, you have been one of the best things to ever happen to me, and I want to take a moment to say that properly. You are THE most funny, passionate, clever, sharp, and beautiful person I've ever met.", "I don't say this often enough, but you make my life so much more kaleidoscopic. There's something about the way your mind works and how you see the world that makes talking to you so interesting. One of my favorite things about you is that I can never predict what you're gonna say next. You have this ridiculous but textury combination of intelligence, wit, and delerium, and I don't know why or how but it just makes you such an awesome person to be near. Your brain is genuinely fascinating. ",
+  ,"And I hope you know that when I call you funny, clever, beautiful, or any of the other things I call you, I'm not just throwing around compliments for the sillys; I mean them in hyper particular ways. You're funny in a way that makes me wish I could experience the world from inside your head, cuz I genuinely can NOT fathom how you arrive at some of the things you say.  You're clever in a way that makes me wonder how you've gained such brilliant insight. And you're beautiful in a way that makes that word feel embarrassingly inadequate. But more than ANYTHING, you're someone I genuinely respect and cherish. I'm so glad you're in my life.", "You've made me think about things differently and realize parts of myself I probably wouldn't have taken note of otherwise. I attribute a great percent of my social, emotional, and scholarly growth to you.",
+  "I hope this year is the best one yet for you. I hope you get everything you've been working toward and I hope you always feel as special as you actually are.",
+  "Anyways, have the best day ever. You're gonna do amazing things this year and I'm so excited to watch. happy birthday santoshi!!!", "."
+
+]
+
+
+var pianoKeys = [
+  {nm:"C4", hz:261.63, kind:"w", kb:"a", lab:"C"},
+  {nm:"C#4", hz:277.18, kind:"b", kb:"w", after:1},
+  {nm:"D4", hz:293.66, kind:"w", kb:"s", lab:"D"},
+  {nm:"D#4", hz:311.13, kind:"b", kb:"e", after:2},
+  {nm:"E4", hz:329.63, kind:"w", kb:"d", lab:"E"},
+  {nm:"F4", hz:349.23, kind:"w", kb:"f", lab:"F"},
+  {nm:"F#4", hz:369.99, kind:"b", kb:"t", after:4},
+  {nm:"G4", hz:392, kind:"w", kb:"g", lab:"G"},
+  {nm:"G#4", hz:415.3, kind:"b", kb:"y", after:5},
+  {nm:"A4", hz:440, kind:"w", kb:"h", lab:"A"},
+  {nm:"A#4", hz:466.16, kind:"b", kb:"u", after:6},
+  {nm:"B4", hz:493.88, kind:"w", kb:"j", lab:"B"},
+  {nm:"C5", hz:523.25, kind:"w", kb:"k", lab:"C"}
+]
+var bdayTune = ["G4","G4","A4","G4","C5","B4"]
+
+var pianoDiv = document.getElementById('piano')
+var dotEls = document.querySelectorAll('#progress span')
+var msgLine = document.getElementById('status')
+var elOf = {}, whichKey = {}
+var nWhite = 0
+var gotSoFar = 0, unlocked = false, wrongTries = 0
+var audioCtx
+
+pianoKeys.forEach(function(k){ if(k.kind == "w") nWhite++ })
+
+for(let i = 0; i < pianoKeys.length; i++){
+  let k = pianoKeys[i]
+  let div = document.createElement('div')
+  div.className = 'key ' + (k.kind == "w" ? 'white' : 'black')
+  div.dataset.note = k.nm
+  if(k.kind == "w"){
+    div.innerHTML = '<span>' + k.lab + '</span>'
+  } else {
+    // idk why it needs the 4.1 but it works
+    div.style.left = 'calc(' + (k.after / nWhite * 100) + '% - 4.1%)'
+  }
+  pianoDiv.appendChild(div)
+  elOf[k.nm] = div
+  whichKey[k.kb] = k
+}
+
+function makeSound(hz, secs, loud){
+  try {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    if(audioCtx.state == 'suspended') audioCtx.resume()
+  } catch(err){
+    console.log('no audio :(', err)
+    return
+  }
+  secs = secs || 1.6
+  loud = loud || .28
+  if(hz > 600) loud = loud * .5
+  var now = audioCtx.currentTime
+  var vol = audioCtx.createGain()
+  vol.gain.setValueAtTime(.0001, now)
+  vol.gain.exponentialRampToValueAtTime(loud, now + .01)
+  vol.gain.exponentialRampToValueAtTime(.0001, now + secs)
+  vol.connect(audioCtx.destination)
+  // tried just 1 oscillator, sounded like a microwave
+  var layers = [[1,'triangle',1],[2,'sine',.35],[3,'sine',.12],[4,'sine',.05]]
+  if(hz > 600) layers = layers.slice(0, 2)
+  layers.forEach(l => {
+    var osc = audioCtx.createOscillator()
+    var oscVol = audioCtx.createGain()
+    osc.type = l[1]
+    osc.frequency.value = hz * l[0]
+    oscVol.gain.value = l[2]
+    osc.connect(oscVol)
+    oscVol.connect(vol)
+    osc.start(now)
+    osc.stop(now + secs + .05)
+  })
+}
+
+function lightUp(n){
+  dotEls.forEach((d, i) => { d.classList.toggle('on', i < n) })
+}
+
+function checkTune(noteName){
+  if(unlocked) return
+  if(noteName == bdayTune[gotSoFar]){
+    gotSoFar++
+  }
+  else {
+    var hadSome = gotSoFar > 0
+    gotSoFar = (noteName == bdayTune[0]) ? 1 : 0
+    if(hadSome && gotSoFar == 0){
+      wrongTries++
+      msgLine.textContent = wrongTries > 3 ? "hint: u sing this every year lol" : "close but denied"
+      setTimeout(function(){ if(!unlocked) msgLine.innerHTML = "&nbsp;" }, 1400)
+    }
+  }
+  lightUp(gotSoFar)
+  if(gotSoFar == bdayTune.length){
+    unlocked = true
+    msgLine.textContent = "gg freaking easy"
+    setTimeout(showNote, 1500)
+  }
+}
+
+function hitKey(k){
+  elOf[k.nm].classList.add('down')
+  makeSound(k.hz)
+  checkTune(k.nm)
+}
+function lift(k){ elOf[k.nm].classList.remove('down') }
+
+var fingers = {}
+pianoDiv.addEventListener('pointerdown', function(e){
+  var el = e.target.closest('.key')
+  if(!el) return
+  e.preventDefault()
+  var k = pianoKeys.find(x => x.nm == el.dataset.note)
+  fingers[e.pointerId] = k
+  hitKey(k)
+})
+;['pointerup','pointercancel','pointerleave'].forEach(function(evName){
+  pianoDiv.addEventListener(evName, function(e){
+    var k = fingers[e.pointerId]
+    if(k){ lift(k); delete fingers[e.pointerId] }
+  })
+})
+
+function showNote(){
+  document.getElementById('lock').classList.remove('active')
+  document.getElementById('note').classList.add('active')
+  document.getElementById('her-name').textContent = santoshi
+  document.getElementById('date-line').textContent = bday
+  var box = document.getElementById('message')
+  box.innerHTML = ''
+  noteText.forEach(function(line, i){
+    var p = document.createElement('p')
+    p.textContent = line
+    p.style.animationDelay = (.6 + i * .7) + 's'
+    box.appendChild(p)
+  })
+  var signEl = document.getElementById('sign')
+  signEl.textContent = me
+  signEl.style.animationDelay = (.6 + noteText.length * .7) + 's'
+
+  var favBox = document.getElementById('favs')
+  favBox.innerHTML = ''
+  favSongs.forEach(function(s){
+    var b = document.createElement('button')
+    b.className = 'fav'
+    b.textContent = '▶ ' + s.title
+    b.onclick = function(){ playSong(s.notes, s.beat) }
+    favBox.appendChild(b)
+  })
+  favBox.style.animationDelay = (.6 + (noteText.length + 1) * .7) + 's'
+
+  confettiGo()
+  playSong()
+}
+
+// notes that arent on the piano (high melody notes + low chord notes)
+var highHz = {
+  D5:587.33, E5:659.25, F5:698.46, G5:783.99,
+  G2:98, B2:123.47, C3:130.81, D3:146.83, E3:164.81, F3:174.61, G3:196, A3:220
+}
+
+function hzOf(nm){
+  return elOf[nm] ? pianoKeys.find(k => k.nm == nm).hz : highHz[nm]
+}
+
+// chords for the backing: first note = bass
+var chC = ["C3","E3","G3"]
+var chG = ["G2","B2","D3","F3"]
+var chF = ["F3","A3","C4"]
+
+// 0 = rest, "cha" = voice clip 
+// ["ch", 0, chord, beats] = backing chord, doesnt move clock
+var bdaySong = [
+  ["ch",0,chC,4],
+  ["G4",.75],["G4",.25],["A4",1],["G4",1],["C5",1],
+  ["ch",0,chG,2],
+  ["B4",2],["cha",4],
+
+  ["ch",0,chG,4],
+  ["G4",.75],["G4",.25],["A4",1],["G4",1],["D5",1],
+  ["ch",0,chC,2],
+  ["C5",2],["cha",4],
+
+  ["ch",0,chC,4],
+  ["G4",.75],["G4",.25],["G5",1],["E5",1],["C5",1],
+  ["ch",0,chG,3],
+  ["B4",1],["A4",2],["cha",4],
+
+  ["ch",0,chF,3],
+  ["F5",.75],["F5",.25],["E5",1],["C5",1],
+  ["ch",0,chG,1],
+  ["D5",1],
+  ["ch",0,chC,3],
+  ["C5",3]
+]
+
+var favSongs = [
+  {title:"Jhol", notes:[["A4", 2],["A4", 1],["A4", 0.5],["A4", 0.5], 
+                        ["G4", 0.5],["A4", 0.5],["G4", 0.5],["A4", 1.5],
+                        ["A4", 0.5],["G4", 0.5],["G4", 1.1], ["A4",0.5], ["G4",0.5], ["F4", 0.5],["E4", 0.5],["F4", 0.5]] },
+  {title:"Main Tera Boyfriend", notes:[["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["E4", 0.5],
+
+// Bar 3
+["E4", 0.5], ["C#4", 0.5], ["C#4", 1], ["C#4", 1], ["rest", 1],
+
+// Bar 4
+["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["F#4", 0.5],
+
+// Bar 5
+["F#4", 0.5], ["E4", 0.5], ["E4", 1], ["E4", 1], ["rest", 1],
+
+// Bar 6
+["D4", 1], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["D4", 0.5], ["E4", 0.5],
+
+// Bar 7
+["E4", 0.5], ["C#4", 0.5], ["C#4", 0.5], ["C#4", 0.5], ["C#4", 1], ["C#4", 0.5], ["B3", 0.5],
+
+// Bar 8
+["A3", 1.5], ["B3", 0.5], ["C#4", 1.5], ["B3", 0.5],
+
+// Bar 9
+["C#4", 4]]}
+]
+
+var chaSound = new Audio('chachacha.mp3')
+var beatLen = .42   // tried .5, too slow
+var songTimers = []
+
+function stopSong(){
+  songTimers.forEach(clearTimeout)
+  songTimers = []
+  chaSound.pause()
+  chaSound.currentTime = 0
+  for(var nm in elOf) elOf[nm].classList.remove('down')
+}
+
+function playSong(song, beat){
+  stopSong()
+  song = song || bdaySong
+  beat = beat || beatLen
+  var clock = .2
+  song.forEach(function(item){
+    var nm = item[0], beats = item[1]
+    if(nm == "cha"){
+      songTimers.push(setTimeout(function(){
+        chaSound.currentTime = 0
+        chaSound.play()
+      }, clock * 1000))
+    }
+    else if(nm == "ch"){
+      var chord = item[2], hold = item[3]
+      for(let b = 0; b < hold; b++){
+        songTimers.push(setTimeout(function(){
+          if(b % 3 == 0){
+            makeSound(hzOf(chord[0]), beat * 3, .14)
+          } else {
+            chord.slice(1).forEach(function(c){ makeSound(hzOf(c), beat * 1.5, .06) })
+          }
+        }, (clock + b * beat) * 1000))
+      }
+    }
+    else if(nm){
+      var startMs = clock * 1000
+      var duration = beats * beat
+      var hz = hzOf(nm)
+      songTimers.push(setTimeout(function(){
+        makeSound(hz, duration + .9, .22)
+        if(elOf[nm]) elOf[nm].classList.add('down')
+      }, startMs))
+      songTimers.push(setTimeout(function(){
+        if(elOf[nm]) elOf[nm].classList.remove('down')
+      }, startMs + Math.max(120, duration * 800)))
+    }
+    clock += beats * beat
+  })
+}
+
+// confetti code, randomizer needs work ////////////////////////////////////////////////////////////////////
+function confettiGo(){
+  var canvas = document.getElementById('confetti')
+  var pen = canvas.getContext('2d')
+  canvas.width = innerWidth
+  canvas.height = innerHeight
+  var partyColors = ['#e8b04a','#ff5a4e','#222','#6fb7c9','#c78bd6']
+  var pieces = []
+  for(var i = 0; i < 140; i++){
+    pieces.push({
+      x: Math.random() * canvas.width,
+      y: -Math.random() * canvas.height,
+      w: 4 + Math.random() * 6,
+      h: 8 + Math.random() * 10,
+      fall: 1.5 + Math.random() * 2.5,
+      drift: -1 + Math.random() * 2,
+      angle: Math.random() * 3,
+      spin: -.1 + Math.random() * .2,
+      color: partyColors[i % partyColors.length]
+    })
+  }
+  var startTime = performance.now()
+  function tick(now){
+    pen.clearRect(0, 0, canvas.width, canvas.height)
+    var stillGoing = now - startTime < 7000
+    var anyOnScreen = false
+    pieces.forEach(function(c){
+      c.x += c.drift
+      c.y += c.fall
+      c.angle += c.spin
+      if(stillGoing && c.y > canvas.height){ c.y = -20; c.x = Math.random() * canvas.width }
+      if(c.y < canvas.height) anyOnScreen = true
+      pen.save()
+      pen.translate(c.x, c.y)
+      pen.rotate(c.angle)
+      pen.fillStyle = c.color
+      pen.fillRect(-c.w / 2, -c.h / 2, c.w, c.h)
+      pen.restore()
+    })
+    if(stillGoing || anyOnScreen) requestAnimationFrame(tick)
+    else pen.clearRect(0, 0, canvas.width, canvas.height)
+  }
+  tick(startTime)
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+</script>
+</body>
+</html>
